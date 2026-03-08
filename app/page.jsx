@@ -122,7 +122,11 @@ export default function App() {
       });
       const result = await res.json();
       clearInterval(loadRef.current);
-      if (!result.ok) throw new Error(result.error);
+      if (!result.ok) {
+        alert("❌ 오류 발생!\n\n" + result.error);
+        setLoading(false);
+        return;
+      }
       setAiData(result.data);
       setActiveSlide(0); setActiveItem(0);
     } catch(e) {
