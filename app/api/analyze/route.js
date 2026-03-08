@@ -1,10 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
-
 export async function POST(req) {
   try {
     const { imageBase64, mimeType, weather, dateStr } = await req.json();
-
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     const prompt = `당신은 한국 유아 패션 전문가이자 재미있는 육아 인플루언서입니다.
 오늘 날짜: ${dateStr}
@@ -30,24 +26,30 @@ export async function POST(req) {
   "hashtags": ["등원룩","아기옷","육아일상","엄마그램","유아패션","오늘뭐입지","등원준비","아이옷","육아템","키즈패션","맘스타그램","아기일상","육아스타그램","겨울육아","겨울등원룩","아기패션","키즈코디","오늘의코디","등원스타그램","패션육아"]
 }`;
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1500,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: mimeType, data: imageBase64 },
-            },
-            { type: "text", text: prompt },
-          ],
-        },
-      ],
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1500,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: mimeType, data: imageBase64 } },
+              { type: "text", text: prompt },
+            ],
+          },
+        ],
+      }),
     });
 
-    let txt = response.content.map((x) => x.text || "").join("");
+    const json = await response.json();
+    let txt = (json.content || []).map((x) => x.text || "").join("");
     txt = txt.replace(/```json|```/g, "").trim();
     const data = JSON.parse(txt);
 
